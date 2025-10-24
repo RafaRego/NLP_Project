@@ -86,7 +86,61 @@ df = df.loc[mask_polarized].copy()
 # Ensure cleaned text exists and is non-empty after cleaning
 df = df[df["text_clean"].astype(str).str.strip() != ""]
 
+#%% Remove retweets and exact duplicate texts
+
+# Identify retweets using a robust pattern and (if present) the retweet_count column
+rt_regex = re.compile(r'(?i)^\s*rt[\s:@]')  # matches "RT ", "rt:", "rt@", etc. at the start
+is_retweet = df[text_col].astype(str).str.match(rt_regex)
+
+# Show a few examples of true retweets that will be removed
+rt_examples = df.loc[is_retweet, [text_col, "text_clean"]].head(5)
+if not rt_examples.empty:
+    print(f"\n[Step 3a] Retweets to remove (strict RT-prefix): {is_retweet.sum()} rows")
+    print("[Step 3a] Examples of retweets:")
+    with pd.option_context("display.max_colwidth", 160):
+        print(rt_examples.to_string(index=False))
+else:
+    print("\n[Step 3a] No retweets detected by the strict RT-prefix rule.")
+
+# Remove retweets
+df = df.loc[~is_retweet].copy()
+
+# Detect exact duplicates after cleaning (same text_clean string)
+dup_mask = df.duplicated(subset=["text_clean"], keep="first")
+n_dups = int(dup_mask.sum())
+
+# Show a few duplicate groups (text and how many times it appears)
+if n_dups > 0:
+    dup_counts = (
+        df.loc[dup_mask | df.duplicated(subset=["text_clean"], keep=False), "text_clean"]
+          .value_counts()
+    )
+    top_dup_groups = dup_counts[dup_counts > 1].head(5)
+    print(f"\n[Step 3a] Exact duplicate rows to remove: {n_dups}")
+    print("[Step 3a] Examples of duplicate texts and their counts:")
+    for txt, cnt in top_dup_groups.items():
+        print(f"- ({cnt}×) {txt[:140]}")
+
+    # Show one kept vs one removed for the first duplicate group
+    example_text = top_dup_groups.index[0]
+    group_rows = df.loc[df["text_clean"] == example_text, [text_col, "text_clean"]].head(2)
+    if len(group_rows) == 2:
+        print("\n[Step 3a] For the first duplicate group, one kept vs one removed example:")
+        with pd.option_context("display.max_colwidth", 160):
+            print(group_rows.to_string(index=False))
+else:
+    print("\n[Step 3a] No exact duplicates detected in text_clean.")
+
+# Drop duplicate rows now (keep the first occurrence)
+df = df.loc[~dup_mask].copy()
+
+#%% NOTE TO SEBB ALSO CHECK IF WE ONLY HAVE ENGLISH IN THE DATASET I CHECK THE TWITTER WITH CHATGPT BUT I TRIED THE REVIEW
+# ONE THERE AND IT WAS TOO HEAVY. BETTER TO DO IT IN CODE.
+#%%
 # Binary mapping: negative -> 0, positive -> 1
 label_map = {"negative": 0, "positive": 1}
 df["label_bin"] = labels_norm.loc[df.index].map(label_map).astype(int)
 
+
+#%% Save cleaned dataset to CSV
+df.to_csv("tweets_clean.csv", index=False)

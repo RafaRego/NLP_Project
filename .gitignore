@@ -1,0 +1,33 @@
+# --- System / editor files ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+
+# --- Python caches ---
+*.pyo
+*.pyd
+*.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Outputs / model / logs ---
+logs/
+clf_out/
+sentiment-model-distilbert/
+*.ckpt
+*.bin
+*.pt
+*.h5
+
+# --- Temporary data ---
+*.csv
+!tweets_clean.csv   # keep only tweets_clean.csv tracked
+data/
+results/
+
+# --- Virtual environments ---
+.env
+.venv/
+venv/

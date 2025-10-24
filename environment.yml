@@ -1,0 +1,17 @@
+name: nlp25
+channels:
+  - conda-forge
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.11
+  - pandas
+  - scikit-learn
+  - pytorch
+  - pytorch-cuda=12.1        # works with driver 555.x
+  - pip
+  - pip:
+      - transformers>=5.0.0
+      - datasets>=3.0.0
+      - accelerate>=0.26.0
+      - evaluate>=0.4.0
